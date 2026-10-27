@@ -1,37 +1,45 @@
 """
-collection_news.py - Cao TIN TUC theo quy trinh FNSPID (ban rut gon). Chi tao news.csv.
+collection_news_api.py - Mo phong quy trinh cao tin 2 giai doan cua FNSPID, dung API Finnhub cho giai doan 1.
 
+  Giai doan 1 (API Finnhub): ma co phieu -> tieu de + URL + tom tat + ngay + nguon
+  Giai doan 2 (mo URL bai):  lay NOI DUNG bai cho mot MAU NHO, theo cac quy tac ton trong website:
+      - doc robots.txt cua TUNG ten mien truoc khi mo bai (ke ca moi buoc chuyen huong)
+      - giu khoang cach giua cac request den cung mot ten mien (toi thieu MIN_DOMAIN_GAP, hoac Crawl-delay neu lon hon)
+      - tu nhan dien minh bang User-Agent trung thuc (khong gia lam trinh duyet)
+      - bi tu choi (403/401/402/429, robots cam, trang tra phi) thi BO QUA, khong tim cach lach;
+        2 lan bi tu choi lien tiep o mot ten mien thi bo han ten mien do
+  Ket qua giong bai bao: chi mot phan bai co noi dung (bai goc: khoang 25%).
 
-Quy trinh:
-  Giai doan 1: trang tin cua tung ma -> headline + URL
-  Giai doan 2: vao tung URL -> noi dung (bai ngan / tra phi thi de trong)
+CACH DUNG: mo file trong VS Code, bam Run. Nhap Finnhub API key khi duoc hoi
+(hoac dat bien moi truong FINNHUB_API_KEY, hoac file finnhub_key.txt canh file nay). Dung dua key len GitHub.
 
-Ket qua trong thu muc output/ canh file nay:
-  news.csv                 LUON duoc tao (neu khong cao duoc gi thi chi co dong tieu de)
-  news_collection_log.txt  nhat ky chay + ly do dung (bang chung cho bao cao)
-  debug_<ma>.png / .html   anh va ma nguon trang khi khong lay duoc headline
-
-Ton trong robots.txt: tu dong doc Crawl-delay va giu khoang cach giua cac request.
+Ket qua trong output/:
+  news_finnhub.csv       cot: Symbol, Date, Headline, URL, Text, Summary, Source, TextStatus
+  news_finnhub_log.txt   nhat ky chay + thong ke theo trang thai / ten mien
 """
 import importlib
+import json
+import os
 import random
 import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
-from datetime import datetime
+from collections import Counter
+from datetime import date, datetime, timedelta, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib import robotparser
 
-try:                                           
+try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
 
 
 def ensure(pkg, module=None):
-    """Neu thieu thu vien thi tu cai vao dung Python dang chay."""
     try:
         importlib.import_module(module or pkg)
     except ImportError:
@@ -40,33 +48,43 @@ def ensure(pkg, module=None):
 
 
 ensure("pandas")
-ensure("selenium")
-
-import pandas as pd                                              # noqa: E402
-from selenium import webdriver                                   # noqa: E402
-from selenium.webdriver.common.by import By                      # noqa: E402
-from selenium.webdriver.chrome.options import Options            # noqa: E402
-from selenium.webdriver.support.ui import WebDriverWait          # noqa: E402
-from selenium.webdriver.support import expected_conditions as EC  # noqa: E402
+import pandas as pd  # noqa: E402
 
 # ============================== CAU HINH ==============================
-TICKERS = ["AAPL", "MSFT"]          # thu it ma truoc
-START_DATE = "2024-01-01"           # chi giu tin tu ngay nay (neu doc duoc ngay)
-MAX_ARTICLES = 5                    # so bai toi da moi ma (tang len sau khi chay on)
-MAX_MB = 500                        # tran dung luong tin   
-HEADLESS = False                    # False: thay Chrome chay; True: chay an
-SLEEP = (2, 4)                      # khoang cach toi thieu giua 2 request; tu tang theo Crawl-delay
-WAIT_LINKS = 25                     # giay toi da cho danh sach tin hien ra (trang tai bang JavaScript)
-MIN_CHARS = 300                     # noi dung ngan hon muc nay coi nhu khong lay duoc
-BASE = "https://www.nasdaq.com"
-NEWS_URL = BASE + "/market-activity/stocks/{t}/news-headlines"   # kiem tra lai tren trinh duyet
-LINK_CSS = "a[href*='/market-activity/stocks#news']"  # cach nhan dien link bai viet
+# Danh sach mac dinh: 50 ma von hoa lon do MINH CHON (khong phai danh sach cua bai bao).
+# Muon dung danh sach khac (vi du ca S&P 500): tao file tickers.txt canh script, moi dong mot ma.
+TICKERS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AVGO", "JPM", "LLY",
+           "V", "UNH", "XOM", "MA", "COST", "HD", "PG", "JNJ", "NFLX", "ABBV",
+           "WMT", "BAC", "CRM", "ORCL", "CVX", "KO", "MRK", "AMD", "PEP", "TMO",
+           "ADBE", "ACN", "LIN", "MCD", "CSCO", "ABT", "WFC", "GE", "IBM", "DIS",
+           "QCOM", "TXN", "CAT", "INTU", "VZ", "AMGN", "PFE", "NOW", "UBER", "GS"]
+START_DATE = "2025-10-28"       # lay tin tu ngay nay ...
+END_DATE = "2026-09-30"         # ... den het ngay nay
+MAX_MB = 500                    # tran dung luong (tong tieu de + URL + tom tat + noi dung)
+WINDOW_DAYS = 7                 # chia khoang ngay thanh cac cua so nho
+SPLIT_AT = 200                  # cua so tra ve tu ngan nay tin tro len thi chia doi de tranh bi cat bot (phong doan)
+CALL_GAP = 1.1                  # giay giua 2 lan goi API Finnhub
+EMPTY_STOP = 6                  # gap bay nhieu cua so lien tiep khong co tin thi coi la het lich su cua goi
+API = "https://finnhub.io/api/v1/company-news"
+
+FULLTEXT_SAMPLE = 30            # so bai thu lay noi dung (giai doan 2). Dat 0 de tat
+MAX_PER_DOMAIN = 10             # toi da bao nhieu bai tu moi ten mien
+MIN_DOMAIN_GAP = 5              # giay toi thieu giua 2 request den cung ten mien
+MIN_CHARS = 300                 # noi dung ngan hon muc nay coi la khong lay duoc (co the tra phi / tai bang JS)
+CONTACT = ""                    # (nen dien) email lien he, se nam trong User-Agent de website biet ai dang truy cap
+UA_NAME = "FNSPID-course-project"
 OUT = Path(__file__).parent / "output"
+KEY_FILE = Path(__file__).parent / "finnhub_key.txt"
+PARTS = OUT / "finnhub_parts"       # moi ma luu 1 file de co the chay tiep neu bi ngat
 # ======================================================================
 
-COLUMNS = ["Symbol", "Date", "Headline", "URL", "Text", "Source"]
+UA = f"{UA_NAME}/1.0 (educational research" + (f"; contact: {CONTACT}" if CONTACT else "") + ")"
+COLUMNS = ["Symbol", "Date", "Headline", "URL", "Text", "Summary", "Source", "TextStatus"]
 LOG = []
-LAST_REQ = [0.0]
+
+
+class StopRun(Exception):
+    pass
 
 
 def log(msg):
@@ -74,178 +92,317 @@ def log(msg):
     LOG.append(msg)
 
 
-def polite_get(driver, url):
-    """Mo URL, dam bao cach request truoc it nhat SLEEP giay (tinh tu luc request truoc)."""
-    gap = random.uniform(*SLEEP) - (time.time() - LAST_REQ[0])
-    if gap > 0:
-        time.sleep(gap)
-    LAST_REQ[0] = time.time()
-    driver.get(url)
+# ----------------------------- GIAI DOAN 1: API -----------------------------
+def get_key():
+    key = os.environ.get("FINNHUB_API_KEY", "").strip()
+    if not key and KEY_FILE.exists():
+        key = KEY_FILE.read_text(encoding="utf-8").strip()
+    if not key:
+        import getpass
+        key = getpass.getpass("Nhap Finnhub API key (se khong hien ra khi go): ").strip()
+    if not key:
+        raise StopRun("Khong co API key.")
+    return key
 
 
-def make_driver():
-    opts = Options()
-    if HEADLESS:
-        opts.add_argument("--headless=new")
-    opts.add_argument("--window-size=1280,900")
-    opts.add_argument("--blink-settings=imagesEnabled=false")
-    opts.page_load_strategy = "eager"
-    try:
-        driver = webdriver.Chrome(options=opts)
-    except Exception as e:
-        raise RuntimeError(f"Khong mo duoc Chrome (da cai Google Chrome chua?): {e}")
-    driver.set_page_load_timeout(30)
-    return driver
-
-
-def get_headlines(driver, ticker):
-    """Giai doan 1: tra ve list (headline, url)."""
-    polite_get(driver, NEWS_URL.format(t=ticker.lower()))
-    try:                                     # cho danh sach tin hien ra (noi dung tai bang JS)
-        WebDriverWait(driver, WAIT_LINKS).until(EC.presence_of_element_located((By.CSS_SELECTOR, LINK_CSS)))
-    except Exception:
-        pass                                 # khong thay link: debug_page se ghi lai chi tiet
+def fetch_json(url):
+    """Goi API, tu thu lai khi bi gioi han toc do (429). Khong bao gio in token ra man hinh."""
     for _ in range(3):
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(1)
-    found, seen = [], set()
-    for a in driver.find_elements(By.CSS_SELECTOR, LINK_CSS):
-        href, title = a.get_attribute("href"), a.text.strip()
-        if href and title and href not in seen:
-            seen.add(href)
-            found.append((title, href))
-    return found[:MAX_ARTICLES]
-
-
-def get_article(driver, url):
-    """Giai doan 2: tra ve (ngay, noi_dung)."""
-    polite_get(driver, url)
-    paras = driver.find_elements(By.CSS_SELECTOR, "article p") or driver.find_elements(By.CSS_SELECTOR, "p")
-    text = " ".join(p.text.strip() for p in paras if p.text.strip())
-    date = ""
-    for css, attr in [("meta[property='article:published_time']", "content"), ("time", "datetime")]:
-        els = driver.find_elements(By.CSS_SELECTOR, css)
-        if els and els[0].get_attribute(attr):
-            date = els[0].get_attribute(attr)
-            break
-    return date, text
-
-
-def debug_page(driver, t):
-    """Luu anh, ma nguon va thong tin trang de biet vi sao khong lay duoc headline."""
-    try:
-        driver.save_screenshot(str(OUT / f"debug_{t}.png"))
-        (OUT / f"debug_{t}.html").write_text(driver.page_source, encoding="utf-8")
-        anchors = driver.find_elements(By.TAG_NAME, "a")
-        links = [(a.text.strip(), a.get_attribute("href") or "") for a in anchors]
-        log(f"  -> URL hien tai: {driver.current_url}")
-        log(f"  -> Tieu de trang: {driver.title!r}")
-        log(f"  -> Tong so link: {len(links)}; link khop '{LINK_CSS}': {sum('/market-activity/stocks#news' in h for _, h in links)}")
-        long_links = [(x, h) for x, h in links if len(x) >= 30][:12]
-        if long_links:
-            log("  -> Mot so link co chu dai (de xem tin nam o dau):")
-            for x, h in long_links:
-                log(f"       {x[:60]} | {h[:90]}")
-        log(f"  -> Da luu output/debug_{t}.png va output/debug_{t}.html")
-    except Exception as e:
-        log(f"  -> khong luu duoc thong tin debug: {e}")
-
-
-def load_robots():
-    """Doc robots.txt co gioi han thoi gian (robotparser.read() mac dinh khong co timeout)."""
-    rp = robotparser.RobotFileParser()
-    req = urllib.request.Request(BASE + "/robots.txt", headers={"User-Agent": "Mozilla/5.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            rp.parse(r.read().decode("utf-8", "replace").splitlines())
-    except urllib.error.HTTPError as e:
-        if e.code == 404:            # khong co robots.txt: coi nhu khong han che
-            rp.parse([])
-        else:
-            raise
-    return rp
-
-
-def scrape(rows):
-    """Cao tin, them dong vao `rows`. Neu loi giua chung thi rows van giu phan da cao duoc."""
-    global SLEEP
-    log("Dang kiem tra robots.txt (toi da 15 giay) ...")
-    try:
-        rp = load_robots()
-        log("Da doc robots.txt.")
-    except Exception as e:
-        log(f"DUNG: khong doc duoc robots.txt ({e}).")
-        log(f"Hay tu mo {BASE}/robots.txt trong trinh duyet de kiem tra; may co the dang bi Nasdaq tu choi ket noi.")
-        return
-    delay = rp.crawl_delay("*")
-    if delay:
-        SLEEP = (delay, delay + 5)
-        log(f"robots.txt yeu cau Crawl-delay {delay}s: cac request cach nhau {SLEEP[0]}-{SLEEP[1]} giay.")
-        log(f"Uoc tinh: moi bai mat ~{delay + 2}s, {len(TICKERS)} ma x {MAX_ARTICLES} bai ~ "
-            f"{len(TICKERS) * (MAX_ARTICLES + 1) * (delay + 2) / 60:.0f} phut.")
-
-    log("Dang mo Chrome ...")
-    driver, size_bytes = make_driver(), 0
-    try:
-        for t in TICKERS:
-            url = NEWS_URL.format(t=t.lower())
-            if not rp.can_fetch("*", url):
-                log(f"[{t}] robots.txt khong cho phep: {url}")
+        try:
+            with urllib.request.urlopen(url, timeout=20) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                log("  bi gioi han toc do (429), doi 65 giay roi thu lai ...")
+                time.sleep(65)
                 continue
-            log(f"[{t}] dang mo trang tin ...")
-            try:
-                heads = get_headlines(driver, t)
-            except Exception as e:
-                log(f"[{t}] loi lay headline: {e}")
-                heads = []
-            log(f"[{t}] {len(heads)} headline")
-            if not heads:
-                debug_page(driver, t)
-            for i, (title, href) in enumerate(heads, 1):
-                t0 = time.time()
-                try:
-                    date, text = get_article(driver, href)
-                except Exception as e:
-                    log(f"  loi bai {i}: {e}")
-                    date, text = "", ""
-                ok = len(text) >= MIN_CHARS
-                log(f"  {i}/{len(heads)} ({time.time() - t0:.1f}s) "
-                    f"{'co noi dung' if ok else 'bo qua noi dung'}: {title[:60]}")
-                rows.append({"Symbol": t, "Date": date, "Headline": title,
-                             "URL": href, "Text": text if ok else "", "Source": "NASDAQ"})
-                size_bytes += len(title.encode()) + len(href.encode()) + (len(text.encode()) if ok else 0)
-                if size_bytes >= MAX_MB * 1e6:
-                    log(f"Da dat tran {MAX_MB} MB, dung cao.")
-                    return
-    finally:
-        driver.quit()
+            if e.code in (401, 403):
+                raise StopRun(f"API tu choi (HTTP {e.code}): key sai, het han, hoac goi mien phi khong cho phep yeu cau nay.")
+            raise StopRun(f"Loi HTTP {e.code} tu API.")
+        except urllib.error.URLError as e:
+            raise StopRun(f"Khong ket noi duoc toi API: {e.reason}")
+    raise StopRun("Van bi gioi han toc do sau 3 lan thu.")
 
 
+def get_news(symbol, start, end, key):
+    q = urllib.parse.urlencode({"symbol": symbol, "from": start.isoformat(), "to": end.isoformat(), "token": key})
+    data = fetch_json(f"{API}?{q}")
+    if not isinstance(data, list):
+        raise StopRun(f"API tra ve dinh dang la: {str(data)[:120]}")
+    return data
+
+
+def load_tickers():
+    f = Path(__file__).parent / "tickers.txt"
+    if f.exists():
+        t = [x.strip().upper() for x in f.read_text(encoding="utf-8").splitlines() if x.strip() and not x.startswith("#")]
+        if t:
+            return t
+    return TICKERS
+
+
+def row_size(r):
+    return sum(len(str(r[k]).encode()) for k in ("Headline", "URL", "Summary", "Text"))
+
+
+def fetch_window(symbol, start, end, key):
+    """Lay tin cua mot cua so ngay; neu tra ve qua nhieu (co the bi cat bot) thi chia doi va lay lai."""
+    items = get_news(symbol, start, end, key)
+    time.sleep(CALL_GAP)
+    if len(items) >= SPLIT_AT and end > start:
+        mid = start + (end - start) // 2
+        log(f"    cua so {start}..{end} tra ve {len(items)} tin (>= {SPLIT_AT}), chia doi de tranh bi cat bot")
+        return fetch_window(symbol, start, mid, key) + fetch_window(symbol, mid + timedelta(days=1), end, key)
+    return items
+
+
+def stage1(rows):
+    tickers = load_tickers()
+    PARTS.mkdir(parents=True, exist_ok=True)
+    start_limit, end_limit = date.fromisoformat(START_DATE), date.fromisoformat(END_DATE)
+    n_windows = ((end_limit - start_limit).days + 1) // WINDOW_DAYS + 1
+    log(f"Giai doan 1: {len(tickers)} ma, {START_DATE} -> {END_DATE}, tran {MAX_MB} MB.")
+    log(f"  Neu goi API co du lich su: toi da ~{len(tickers) * n_windows} lan goi (~{len(tickers) * n_windows * CALL_GAP / 3600:.1f} gio).")
+    log("  Luu y: nhieu nguon mo ta goi mien phi chi cho lich su tin khoang 1 nam tinh tu hom nay;")
+    log("  dong 'tin cu nhat lay duoc' o tung ma se cho biet goi cua ban lui duoc xa den dau.")
+    size, key = 0, None
+    for t in tickers:
+        part = PARTS / f"{t}.csv"
+        if part.exists():                    # chay tiep: ma nay da xong o lan truoc
+            recs = pd.read_csv(part, keep_default_na=False, dtype=str).to_dict("records")
+            rows.extend(recs)
+            size += sum(row_size(r) for r in recs)
+            log(f"[{t}] bo qua: da co {len(recs)} tin trong {part.name} (tong {size / 1e6:.1f} MB)")
+            if size >= MAX_MB * 1e6:
+                log(f"Da dat tran {MAX_MB} MB, dung.")
+                return
+            continue
+        if key is None:
+            key = get_key()
+        rows_t, seen = [], set()
+        end, empty_run, oldest = end_limit, 0, None
+        log(f"[{t}] bat dau (lui dan tu {end} ve {START_DATE})")
+        while end >= start_limit:
+            start = max(end - timedelta(days=WINDOW_DAYS - 1), start_limit)
+            items = fetch_window(t, start, end, key)
+            added = 0
+            for it in items:
+                url = (it.get("url") or "").strip()
+                head = (it.get("headline") or "").strip()
+                if not url or not head or url in seen:
+                    continue
+                ts = it.get("datetime")
+                d = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
+                if d and not (start_limit <= d.date() <= end_limit):
+                    continue
+                seen.add(url)
+                r = {"Symbol": t, "Date": d.strftime("%Y-%m-%d %H:%M:%S") if d else "",
+                     "Headline": head, "URL": url, "Text": "", "Summary": (it.get("summary") or "").strip(),
+                     "Source": it.get("source") or "Finnhub", "TextStatus": "not_attempted"}
+                rows_t.append(r)
+                rows.append(r)
+                size += row_size(r)
+                added += 1
+                if d and (oldest is None or d < oldest):
+                    oldest = d
+            log(f"  [{t}] {start}..{end}: {len(items)} tin tu API, them {added} (tong {size / 1e6:.1f} MB)")
+            if size >= MAX_MB * 1e6:
+                log(f"Da dat tran {MAX_MB} MB giua chung ma {t}, dung (ma nay chua hoan tat nen chua danh dau xong).")
+                return
+            empty_run = empty_run + 1 if not items else 0
+            if empty_run >= EMPTY_STOP:
+                log(f"  [{t}] {EMPTY_STOP} cua so lien tiep khong co tin: nhieu kha nang goi hien tai khong co lich su xa hon.")
+                break
+            end = start - timedelta(days=1)
+        pd.DataFrame(rows_t, columns=COLUMNS).to_csv(part, index=False, encoding="utf-8")
+        log(f"[{t}] xong giai doan 1: {len(rows_t)} tin; tin cu nhat lay duoc: {oldest.date() if oldest else 'khong co'}")
+
+
+# ----------------------------- GIAI DOAN 2: NOI DUNG BAI -----------------------------
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+OPENER = urllib.request.build_opener(_NoRedirect)
+ROBOTS = {}         # "scheme://host" -> (RobotFileParser hoac None, delay)
+LAST_HIT = {}       # host -> thoi diem request cuoi
+DOMAIN_COUNT = Counter()
+DOMAIN_FAIL = Counter()
+
+
+def http_robots(url):
+    """Doc robots.txt (theo chuyen huong binh thuong). Tach rieng de de kiem thu."""
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def http_open(req):
+    """Mo mot URL, KHONG tu theo chuyen huong (de kiem tra robots.txt o tung buoc). Tach rieng de de kiem thu."""
+    return OPENER.open(req, timeout=20)
+
+
+def robots_for(url):
+    p = urllib.parse.urlparse(url)
+    origin = f"{p.scheme}://{p.netloc}"
+    if origin in ROBOTS:
+        return ROBOTS[origin]
+    rp = robotparser.RobotFileParser()
+    try:
+        rp.parse(http_robots(origin + "/robots.txt").splitlines())
+        delay = rp.crawl_delay(UA_NAME) or rp.crawl_delay("*") or 0
+        res = (rp, delay)
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 410):
+            rp.parse([])
+            res = (rp, 0)
+        elif e.code in (401, 403):
+            rp.parse(["User-agent: *", "Disallow: /"])
+            res = (rp, 0)
+        else:
+            res = (None, 0)          # khong doc duoc: than trong, coi nhu khong duoc phep
+    except Exception:
+        res = (None, 0)
+    ROBOTS[origin] = res
+    return res
+
+
+class TextExtractor(HTMLParser):
+    SKIP = {"script", "style", "noscript", "svg", "header", "footer", "nav", "aside", "form"}
+
+    def __init__(self):
+        super().__init__()
+        self.skip, self.in_art, self.in_p = 0, 0, False
+        self.cur, self.art, self.other = [], [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.SKIP:
+            self.skip += 1
+        elif tag == "article":
+            self.in_art += 1
+        elif tag == "p":
+            self.in_p, self.cur = True, []
+
+    def handle_endtag(self, tag):
+        if tag in self.SKIP:
+            self.skip = max(0, self.skip - 1)
+        elif tag == "article":
+            self.in_art = max(0, self.in_art - 1)
+        elif tag == "p" and self.in_p:
+            txt = " ".join("".join(self.cur).split())
+            if len(txt) >= 40:
+                (self.art if self.in_art else self.other).append(txt)
+            self.in_p = False
+
+    def handle_data(self, data):
+        if self.in_p and not self.skip:
+            self.cur.append(data)
+
+
+def extract_text(html):
+    p = TextExtractor()
+    try:
+        p.feed(html)
+    except Exception:
+        pass
+    return "\n".join(p.art or p.other)
+
+
+def polite_fetch(url, max_hops=5):
+    """Tra ve (html, status). Kiem tra robots.txt o moi buoc chuyen huong, giu khoang cach theo ten mien."""
+    for _ in range(max_hops):
+        host = urllib.parse.urlparse(url).netloc
+        if DOMAIN_FAIL[host] >= 2:
+            return None, "domain_skipped"
+        if DOMAIN_COUNT[host] >= MAX_PER_DOMAIN:
+            return None, "domain_cap"
+        rp, delay = robots_for(url)
+        if rp is None or not rp.can_fetch(UA_NAME, url):
+            DOMAIN_FAIL[host] += 1
+            return None, "robots"
+        gap = max(delay, MIN_DOMAIN_GAP) - (time.time() - LAST_HIT.get(host, 0))
+        if gap > 0:
+            time.sleep(gap)
+        LAST_HIT[host] = time.time()
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html"})
+        try:
+            with http_open(req) as r:
+                if "html" not in (r.headers.get("Content-Type") or "").lower():
+                    return None, "not_html"
+                raw = r.read(2_000_000)
+                DOMAIN_COUNT[host] += 1
+                return raw.decode(r.headers.get_content_charset() or "utf-8", "replace"), "ok"
+        except urllib.error.HTTPError as e:
+            if e.code in (301, 302, 303, 307, 308):
+                loc = e.headers.get("Location")
+                if not loc:
+                    return None, "redirect_error"
+                url = urllib.parse.urljoin(url, loc)
+                continue
+            if e.code in (401, 402, 403, 429):
+                DOMAIN_FAIL[host] += 1
+                return None, f"denied_{e.code}"
+            return None, f"http_{e.code}"
+        except Exception:
+            return None, "error"
+    return None, "too_many_redirects"
+
+
+def stage2(rows):
+    if FULLTEXT_SAMPLE <= 0 or not rows:
+        return
+    idx = random.Random(42).sample(range(len(rows)), min(FULLTEXT_SAMPLE, len(rows)))
+    log(f"Giai doan 2: thu lay noi dung {len(idx)} bai (mau ngau nhien, co dinh seed). User-Agent: {UA}")
+    for n, i in enumerate(idx, 1):
+        r = rows[i]
+        html, status = polite_fetch(r["URL"])
+        if status == "ok":
+            text = extract_text(html)
+            if len(text) >= MIN_CHARS:
+                r["Text"] = text
+            else:
+                status = "short"
+        r["TextStatus"] = status
+        host = urllib.parse.urlparse(r["URL"]).netloc
+        log(f"  [{n}/{len(idx)}] {status:16} {host[:40]} | {r['Headline'][:50]}")
+
+
+# ----------------------------- LUU KET QUA -----------------------------
 def save(rows):
     df = pd.DataFrame(rows, columns=COLUMNS)
-    if not df.empty:
-        d = pd.to_datetime(df["Date"], errors="coerce", utc=True).dt.tz_localize(None)
-        df["Date"] = d
-        df = df[d.isna() | (d >= pd.Timestamp(START_DATE))].drop_duplicates(subset="URL")
-    df.to_csv(OUT / "news.csv", index=False, encoding="utf-8")
-    log(f"Da luu {len(df)} tin -> {OUT / 'news.csv'}")
+    df.to_csv(OUT / "news_finnhub.csv", index=False, encoding="utf-8")
+    mb = (OUT / "news_finnhub.csv").stat().st_size / 1e6
+    log(f"Da luu {len(df)} tin -> {OUT / 'news_finnhub.csv'} ({mb:.2f} MB)")
     if len(df):
-        log(f"Ty le co noi dung: {(df['Text'].fillna('') != '').mean():.3f}")
-        log(f"Ty le co ngay: {df['Date'].notna().mean():.3f}")
+        log(f"Khoang ngay: {df['Date'].min()} -> {df['Date'].max()}")
+        log(f"Ty le co tom tat: {(df['Summary'] != '').mean():.3f}; do dai tom tat trung binh: {df['Summary'].str.len().mean():.0f} ky tu")
+        log("So tin theo ma: " + ", ".join(f"{k}={v}" for k, v in df.groupby('Symbol').size().items()))
+        tried = df[df["TextStatus"] != "not_attempted"]
+        if len(tried):
+            log(f"Giai doan 2: thu {len(tried)} bai, lay duoc noi dung {(tried['TextStatus'] == 'ok').sum()} bai "
+                f"({(tried['TextStatus'] == 'ok').mean():.0%}). Trang thai: " +
+                ", ".join(f"{k}={v}" for k, v in Counter(tried['TextStatus']).items()))
+            log("Theo ten mien (so bai thu / lay duoc): " + "; ".join(
+                f"{h}={g.shape[0]}/{(g['TextStatus'] == 'ok').sum()}"
+                for h, g in tried.assign(host=tried['URL'].map(lambda u: urllib.parse.urlparse(u).netloc)).groupby('host')))
     else:
-        log("news.csv chi co dong tieu de (khong cao duoc tin nao). Xem ly do o cac dong log phia tren.")
+        log("Khong lay duoc tin nao. Xem ly do o cac dong log phia tren.")
     header = f"Chay luc {datetime.now():%Y-%m-%d %H:%M:%S} | ma: {TICKERS} | tu ngay: {START_DATE}\n"
-    (OUT / "news_collection_log.txt").write_text(header + "\n".join(LOG), encoding="utf-8")
+    (OUT / "news_finnhub_log.txt").write_text(header + "\n".join(LOG), encoding="utf-8")
 
 
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
     rows = []
     try:
-        scrape(rows)
+        stage1(rows)
+        stage2(rows)
+    except StopRun as e:
+        log(f"DUNG: {e}")
     except KeyboardInterrupt:
-        log("Da dung boi nguoi dung (Ctrl+C). Luu phan da cao duoc.")
+        log("Da dung boi nguoi dung (Ctrl+C). Luu phan da lay duoc.")
     except Exception as e:
-        log(f"DUNG do loi: {e}")
+        log(f"DUNG do loi: {type(e).__name__}: {e}")
     finally:
         save(rows)

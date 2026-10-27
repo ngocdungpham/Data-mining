@@ -1,0 +1,22 @@
+Chay luc 2026-10-20 18:00:17 | ma: ['AAPL', 'MSFT'] | tu ngay: 2024-01-01
+collection_news.py phien ban 2026-10-20-v6 (Crawl-delay, phat hien bi chan, du phong ma nguon, MANUAL_URLS)
+Dang kiem tra robots.txt (toi da 15 giay) ...
+Da doc robots.txt.
+robots.txt yeu cau Crawl-delay 30s: cac request cach nhau 30-35 giay.
+Uoc tinh: moi bai mat ~32s, 2 ma x 5 bai ~ 6 phut.
+Dang mo Chrome ...
+[AAPL] dang mo trang tin ...
+[AAPL] 0 headline
+  -> URL hien tai: https://www.nasdaq.com/market-activity/stocks/aapl/news-headlines
+  -> Tieu de trang: 'Apple (AAPL) News Headlines | Nasdaq'
+  -> Tong so link: 139; link khop 'a[href*='/articles/']': 0
+  -> Da luu output/debug_AAPL.png va output/debug_AAPL.html
+[AAPL] dung 1 URL dan tay (MANUAL_URLS) de thu giai doan 2
+  BI CHAN o bai 1: Nasdaq/CDN tu choi truy cap tu dong (Reference #18.674a2017.1792494011.37820598)
+  -> URL hien tai: https://www.nasdaq.com/articles/greg-abels-berkshire-hathaway-owns-these-5-stocks-heres-what-1000-each-could-be-worth-2030
+  -> Tieu de trang: 'Access Denied'
+  -> Tong so link: 0; link khop 'a[href*='/articles/']': 0
+  -> Da luu output/debug_AAPL.png va output/debug_AAPL.html
+DUNG: khong gui them request nao nua. Day la ket qua can ghi vao known_issues.md.
+Da luu 0 tin -> d:\Data-mining\output\news.csv
+news.csv chi co dong tieu de (khong cao duoc tin nao). Xem ly do o cac dong log phia tren.

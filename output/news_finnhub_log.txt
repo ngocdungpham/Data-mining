@@ -1,0 +1,15 @@
+Chay luc 2026-10-27 12:36:26 | ma: ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA', 'AVGO', 'JPM', 'LLY', 'V', 'UNH', 'XOM', 'MA', 'COST', 'HD', 'PG', 'JNJ', 'NFLX', 'ABBV', 'WMT', 'BAC', 'CRM', 'ORCL', 'CVX', 'KO', 'MRK', 'AMD', 'PEP', 'TMO', 'ADBE', 'ACN', 'LIN', 'MCD', 'CSCO', 'ABT', 'WFC', 'GE', 'IBM', 'DIS', 'QCOM', 'TXN', 'CAT', 'INTU', 'VZ', 'AMGN', 'PFE', 'NOW', 'UBER', 'GS'] | tu ngay: 2025-10-28
+Giai doan 1: 50 ma, 2025-10-28 -> 2026-09-30, tran 500 MB.
+  Neu goi API co du lich su: toi da ~2450 lan goi (~0.7 gio).
+  Luu y: nhieu nguon mo ta goi mien phi chi cho lich su tin khoang 1 nam tinh tu hom nay;
+  dong 'tin cu nhat lay duoc' o tung ma se cho biet goi cua ban lui duoc xa den dau.
+[AAPL] bat dau (lui dan tu 2026-09-30 ve 2025-10-28)
+    cua so 2026-09-24..2026-09-30 tra ve 245 tin (>= 200), chia doi de tranh bi cat bot
+    cua so 2026-09-28..2026-09-30 tra ve 201 tin (>= 200), chia doi de tranh bi cat bot
+  [AAPL] 2026-09-24..2026-09-30: 337 tin tu API, them 337 (tong 0.1 MB)
+    cua so 2026-09-17..2026-09-23 tra ve 248 tin (>= 200), chia doi de tranh bi cat bot
+Da dung boi nguoi dung (Ctrl+C). Luu phan da lay duoc.
+Da luu 337 tin -> d:\Data-mining\output\news_finnhub.csv (0.15 MB)
+Khoang ngay: 2026-09-24 01:54:00 -> 2026-09-30 23:43:00
+Ty le co tom tat: 1.000; do dai tom tat trung binh: 209 ky tu
+So tin theo ma: AAPL=337
