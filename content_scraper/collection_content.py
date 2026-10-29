@@ -56,7 +56,7 @@ ensure("pandas")
 import pandas as pd  # noqa: E402
 
 # ============================== CAU HINH ==============================
-FULLTEXT_SAMPLE = 30            # tong so bai thu lay noi dung (tang dan: 30 -> 100 -> ...)
+FULLTEXT_SAMPLE = 0             
 MAX_PER_DOMAIN = 10             # toi da bao nhieu bai tu moi ten mien trong mot lan chay
 MIN_DOMAIN_GAP = 5              # giay toi thieu giua 2 request den cung ten mien
 MIN_CHARS = 300                 # noi dung ngan hon muc nay coi la khong lay duoc (co the tra phi / tai bang JS)
@@ -268,8 +268,10 @@ def save_results(results):
 
 def run(rows, results):
     if FULLTEXT_SAMPLE <= 0:
-        raise StopRun("FULLTEXT_SAMPLE = 0: khong lay noi dung.")
-    idx = pick_sample(rows, min(FULLTEXT_SAMPLE, len(rows)))
+        idx = pick_sample(rows, len(rows))
+    else:
+        idx = pick_sample(rows, min(FULLTEXT_SAMPLE, len(rows)))
+
     todo = [i for i in idx if rows[i]["URL"] not in results]
     n_src = len({rows[i].get("Source", "") for i in idx})
     log(f"Phan 2 (noi dung): {len(rows)} headline; mau {len(idx)} bai ({n_src} nhom nguon); da thu truoc do {len(idx) - len(todo)}, "

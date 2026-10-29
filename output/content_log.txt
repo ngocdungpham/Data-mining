@@ -1,37 +1,104 @@
-Chay luc 2026-10-29 17:00:36 | mau 30 bai
+Chay luc 2026-10-29 23:51:12 | mau 0 bai
 Thu muc output: D:\Data-mining\output
-Phan 2 (noi dung): 6004 headline; mau 30 bai (1 nhom nguon); da thu truoc do 0, con 30 bai can thu.
+Phan 2 (noi dung): 28900 headline; mau 28900 bai (1 nhom nguon); da thu truoc do 60, con 28840 bai can thu.
   User-Agent: FNSPID-course-project/1.0 (educational research)
-  [1/30] ok               finance.yahoo.com | Apple (AAPL) Stock Could Be Pricing In Too Much Gr
-  [2/30] ok               finance.yahoo.com | Apple building M8 AI servers, talks with Nvidia, r
-  [3/30] ok               www.trefis.com | Dell Stock Looks Less Expensive Once You Count The
-  [4/30] ok               finance.yahoo.com | Apple stock falls on weak revenue forecast as CEO 
-  [5/30] denied_403       seekingalpha.com | Wall Street Lunch: GameStop CEO Ryan Cohen Reconsi
-  [6/30] ok               finance.yahoo.com | OpenAI developing $300+ AI speaker to challenge Am
-  [7/30] denied_403       www.thestreet.com | Warren Buffett’s biggest bet has a dividend secret
-  [8/30] ok               www.fool.com | SpaceX vs. Apple: Wall Street Sees Strong Upside f
-  [9/30] error            www.benzinga.com | Former IBM Chief Scientist's 3 Filters For SpaceX 
-  [10/30] denied_403       seekingalpha.com | Markets Starting To Choke On Massive Surge In Debt
-  [11/30] ok               www.fool.com | Berkshire Hathaway Has a New Top Holding, and It D
-  [12/30] error            www.benzinga.com | Apple May Add $100 To Higher-End iPhone Models To 
-  [13/30] ok               www.etf.com | Small Cap ETFs Are Beating the S 500 as the Mag 7 
-  [14/30] robots           beincrypto.com | Jim Cramer Names His ‘Sacred Stocks' and Why He Wo
-  [15/30] ok               finance.yahoo.com | Jefferies sees signs of softer iPhone 18 demand
-  [16/30] short            www.cnbc.com | CNBC TechCheck Evening Edition: September 10, 2026
-  [17/30] ok               www.fool.com | Tim Cook Warned of a "100-Year Flood" in Memory Ch
-  [18/30] ok               stocktwits.com | Apple Taps American Airlines Veteran For A Crucial
-  [19/30] ok               finance.yahoo.com | Broadcom (AVGO) Lands Apple Deal Worth Over $30 Bi
-  [20/30] ok               www.fool.com | Apple and Intel Just Signed a Historic Chip Partne
-  [21/30] robots           finance.yahoo.com | Nvidia Is Following Apple’s Playbook. A Record Buy
-  [22/30] ok               finance.yahoo.com | Mizuho says ignore Apple noise, flags key catalyst
-  [23/30] denied_403       www.thestreet.com | Morgan Stanley resets Nvidia stock forecast ahead 
-  [24/30] short            finance.yahoo.com | Nvidia chief meets Foxconn chairman at Taiwan tech
-  [25/30] short            www.barchart.com | The Dow's Split Personality: Why Some Winners Soar
-  [26/30] domain_skipped   www.thestreet.com | Apple’s next AI test may not be Siri
-  [27/30] ok               finance.yahoo.com | Even Apple supply chain maestro Tim Cook couldn’t 
-  [28/30] short            www.cnbc.com | Underweight Apple as they haven't monetized AI on 
-  [29/30] ok               finance.yahoo.com | Apple tests China's CXMT memory chips for iPhones 
-  [30/30] domain_cap       finance.yahoo.com | TSMC posts record revenue in second quarter on AI 
-Da luu 30 dong -> D:\Data-mining\output\content.csv (0.06 MB), cot: Date, Url, Text, Mark
-Da thu 30 bai, lay duoc noi dung 16 bai (53%). Mark: ok=16, robots=2, short=4, denied_403=4, domain_cap=1, error=2, domain_skipped=1
-Theo ten mien (so bai thu / lay duoc): beincrypto.com=1/0; finance.yahoo.com=12/9; seekingalpha.com=2/0; stocktwits.com=1/1; www.barchart.com=1/0; www.benzinga.com=2/0; www.cnbc.com=2/0; www.etf.com=1/1; www.fool.com=4/4; www.thestreet.com=3/0; www.trefis.com=1/1
+  [1/28840] ok               finance.yahoo.com | Himax pops on report linking to Nvida AI optics, A
+  [2/28840] ok               finance.yahoo.com | June shipments of foreign branded phones in China 
+  [3/28840] ok               finance.yahoo.com | Australian Motoring Service Adds Support for Apple
+  [4/28840] ok               finance.yahoo.com | Could AbbVie Inc. (ABBV)’s Post-Humira Transformat
+  [5/28840] ok               stocktwits.com | Nasdaq, S&P 500 Futures Surge As Wall Street Cheer
+  [6/28840] ok               finance.yahoo.com | ACM Research’s Operating Subsidiary ACM Research (
+  [7/28840] ok               finance.yahoo.com | Stocks Rise Pre-Bell as Traders Await Key Inflatio
+  [8/28840] robots           finance.yahoo.com | Agilent Just Retook Its 200-Day Line. Here's What'
+  [9/28840] robots           www.benzinga.com | Mizuho Maintains Neutral on Acadia Healthcare Co, 
+  [10/28840] ok               finance.yahoo.com | Is It Time To Reconsider AECOM (ACM) After A Mixed
+  [11/28840] ok               finance.yahoo.com | OpenAI Left Exposed After Apple's Surprise Legal B
+  [12/28840] ok               finance.yahoo.com | How Goode Foods went from family biz to viral bran
+  [13/28840] ok               www.trefis.com | Nvidia's $1T Guidance Leaves Stock Flat, But These
+  [14/28840] ok               finance.yahoo.com | Why BofA remains cautious on Intel stock despite o
+  [15/28840] ok               investorshub.advfn.com | Intel Jumps After Trump Says Apple Will Partner on
+  [16/28840] domain_cap       finance.yahoo.com | Apple's market cap tops $5T: How AI weakness becam
+  [17/28840] domain_skipped   www.benzinga.com | 12 Health Care Stocks Moving In Wednesday's After-
+  [18/28840] denied_403       seekingalpha.com | Everybody Wants To Panic Sell. Don't.
+  [19/28840] ok               247wallst.com | Lumentum Climbs 4% as the AI Optics Trade Extends 
+  [20/28840] domain_cap       finance.yahoo.com | Is American Airlines Group (AAL) Offering An Oppor
+  [21/28840] domain_cap       finance.yahoo.com | Apple Needs a New Era of Innovation as CEO Cook An
+  [22/28840] domain_cap       finance.yahoo.com | American Air Took 'Substantial' Hit From Shutdown,
+  [23/28840] domain_cap       finance.yahoo.com | US Supreme Court declines to pause order holding A
+  [24/28840] domain_skipped   www.benzinga.com | Shares of companies offering software-as-a-service
+  [25/28840] domain_cap       finance.yahoo.com | Apple (NASDAQ:AAPL) Posts Better-Than-Expected Sal
+  [26/28840] domain_cap       finance.yahoo.com | June 2026's Noteworthy Stocks Estimated Below Intr
+  [27/28840] domain_cap       finance.yahoo.com | KOSPI Trading Halted as Micron Rivals SK Hynix, Sa
+  [28/28840] domain_cap       finance.yahoo.com | Could Comfort Systems' Acquisitions Fuel a Multi-Y
+  [29/28840] denied_403       seekingalpha.com | Silver And Gold Outlook - Metals Suffer From Their
+  [30/28840] domain_cap       finance.yahoo.com | Should SNDL Stock Be in Your Portfolio Post Q1 Ear
+  [31/28840] domain_skipped   www.benzinga.com | Nvidia Supplier TSMC Sees Momentum Surge As Global
+  [32/28840] domain_cap       finance.yahoo.com | How A Top Mutual Fund Manager Can 'Cast A Wider Ne
+  [33/28840] domain_skipped   seekingalpha.com | XPEL, Inc.: A Strong Niche Compounder At A Fair Pr
+  [34/28840] ok               www.fool.com | S&P 500 and Nasdaq Take a Breather as Apple Says G
+  [35/28840] short            finnhub.io | US received 6,000 applications for air traffic con
+  [36/28840] ok               www.cnbc.com | Apple iPhone shipments to beat Samsung for the fir
+  [37/28840] ok               www.fool.com | Meet the Super Semiconductor Stock Crushing Nvidia
+  [38/28840] domain_skipped   seekingalpha.com | Top 25 High-Yield Dividend Stocks For July 2026
+  [39/28840] robots           www.investors.com | AbbVie Pummeled After Delivering A Fourth-Quarter 
+  [40/28840] ok               www.fool.com | Should You Buy AbbVie Stock Before April 29?
+  [41/28840] domain_cap       finance.yahoo.com | Temenos Celebrates Collaboration and Innovation at
+  [42/28840] short            www.cnbc.com | Post Market Wrap: April 24, 2026
+  [43/28840] domain_cap       finance.yahoo.com | Nancy Pelosi Has Added These 9 Stocks To Her Portf
+  [44/28840] short            qz.com | Apple Q3 2026 earnings beat estimates but services
+  [45/28840] domain_cap       finance.yahoo.com | Abbott Falls Most in Nearly 24 Years on Formula Pr
+  [46/28840] domain_skipped   www.benzinga.com | Airlines Brace For Worst Profit Squeeze Since COVI
+  [47/28840] domain_skipped   seekingalpha.com | Gold Volatility Amid Geopolitical Crises: What His
+  [48/28840] domain_cap       finance.yahoo.com | ACN Set to Report Q4 Earnings: Here's What Investo
+  [49/28840] domain_cap       finance.yahoo.com | Apple Stumbles in Court as $634 Million Apple Watc
+  [50/28840] domain_cap       finance.yahoo.com | Morning Brief: Goldman rakes it in, but issues a w
+  [51/28840] domain_cap       finance.yahoo.com | Elon Musk's SpaceX is already closing in on Micros
+  [52/28840] domain_cap       finance.yahoo.com | Market Minute 4-14-26- Big Finance Delivers Big Pr
+  [53/28840] domain_cap       finance.yahoo.com | ServiceNow Stock Climbs 16% in a Month: Hold Tight
+  [54/28840] short            www.marketbeat.com | MarketBeat Week in Review – 07/06 - 07/10
+  [55/28840] domain_skipped   seekingalpha.com | Accenture Is A Solid Hold: The AI Payoff Isn't Her
+  [56/28840] domain_cap       finance.yahoo.com | Applied Optoelectronics Rides on AI Boom: Can It B
+  [57/28840] domain_cap       finance.yahoo.com | Apple names next CEO: Analysts see product-focused
+  [58/28840] domain_skipped   www.benzinga.com | Intel's Next Move Could Be Bigger Than Today's Pop
+  [59/28840] ok               uk.finance.yahoo.com | Trump’s competition chief accuses Apple News of Le
+  [60/28840] domain_cap       finance.yahoo.com | Revolution Medicines Draws Takeover Interest
+  [61/28840] ok               www.proactiveinvestors.com | Accenture shares tumble on slashed revenue growth 
+  [62/28840] domain_cap       finance.yahoo.com | Palmer Luckey Says Apple's New CEO John Ternus May
+  [63/28840] domain_cap       finance.yahoo.com | Apple's Foldable iPhone Runs Into Early Trouble
+  [64/28840] short            finnhub.io | Garmin posts upbeat quarterly results as demand fo
+  [65/28840] ok               247wallst.com | We May Soon Find Out Why Warren Buffett and Berksh
+  [66/28840] ok               www.kiplinger.com | Earnings Calendar and Analysis for This Week (June
+  [67/28840] domain_cap       finance.yahoo.com | Arbor Biotechnologies Achieves Unprecedented Preci
+  [68/28840] domain_cap       finance.yahoo.com | Tech Weekly: Tesla's FSD tech up for debate, Shell
+  [69/28840] domain_cap       finance.yahoo.com | SNY Stock Falls After Board Suddenly Makes Leaders
+  [70/28840] domain_skipped   www.benzinga.com | Abbott To Rally More Than 35%? Here Are 10 Top Ana
+  [71/28840] domain_skipped   www.benzinga.com | Ameris Q1 Adj. EPS $1.63 Beats $1.56 Estimate, Sal
+  [72/28840] short            www.barchart.com | Stocks Finish Mostly Higher on Iran Peace Progress
+  [73/28840] ok               www.fool.com | 2 High-Yield Healthcare Stocks to Buy Before They 
+  [74/28840] domain_cap       finance.yahoo.com | Is AbbVie (ABBV) Still Attractive After Strong 1-Y
+  [75/28840] domain_cap       finance.yahoo.com | Why Apple investors probably don't need to worry a
+  [76/28840] domain_cap       finance.yahoo.com | Business leaders make their 2026 predictions for t
+  [77/28840] domain_skipped   seekingalpha.com | Aurora Cannabis: Weak Near-Term Outlook But Too Ch
+  [78/28840] domain_cap       finance.yahoo.com | Once a $360 Billion Giant, PayPal Draws $53 Billio
+  [79/28840] domain_skipped   seekingalpha.com | Apple Is Winning By Spending Less
+  [80/28840] domain_cap       finance.yahoo.com | What Alphabet's earnings reveal about the decline 
+  [81/28840] domain_skipped   www.benzinga.com | S&P 500 Eases On Iran Ceasefire Jitters, Crude Soa
+  [82/28840] short            www.cnbc.com | Trade Tracker: Jenny Harrington buys NextEra and C
+  [83/28840] ok               247wallst.com | At A 8% Yield, Global X SuperDividend SDIV) Is One
+  [84/28840] domain_cap       finance.yahoo.com | Star51 Capital Announces First Close of Medtech Ve
+  [85/28840] robots           www.investors.com | Berkshire Hathaway Discloses Rare Tech Investment 
+  [86/28840] domain_skipped   www.benzinga.com | Trump Bans Chinese Humanoid Robots; Micron Competi
+  [87/28840] denied_403       www.medtechdive.com | Abbott reports diagnostics growth since $21B Exact
+  [88/28840] domain_cap       finance.yahoo.com | Xsolla and Skich Announce Strategic Partnership to
+  [89/28840] denied_403       www.chartmill.com | Gapping S&P500 stocks in Wednesday's session
+  [90/28840] domain_cap       finance.yahoo.com | How Albertsons’ Dividend Move and Mixed Q1 Outlook
+  [91/28840] denied_403       www.grocerydive.com | Kroger doubles down on large-format stores as it c
+  [92/28840] domain_skipped   seekingalpha.com | Markets Weekly Outlook: Traders Get Impatient For 
+  [93/28840] denied_403       www.chartmill.com | Which S&P500 stocks are the most active on Tuesday
+  [94/28840] ok               www.trefis.com | Should You Worry That IBM Has Gone Quiet On Its AI
+  [95/28840] domain_cap       finance.yahoo.com | The Defense Department Is Infatuated With This Dri
+  [96/28840] domain_skipped   www.benzinga.com | AECOM Raises FY2026 GAAP EPS Guidance from $4.01-$
+Da dung boi nguoi dung (Ctrl+C). Luu phan da lay duoc.
+Da luu 157 dong -> D:\Data-mining\output\content.csv (0.25 MB), cot: Date, Url, Text, Mark
+Da thu 157 bai, lay duoc noi dung 56 bai (36%). Mark: robots=10, ok=56, domain_skipped=24, domain_cap=38, denied_403=16, short=11, error=2
+Theo ten mien (so bai thu / lay duoc): 247wallst.com=4/4; beincrypto.com=1/0; finance.yahoo.com=70/28; finnhub.io=2/0; fintel.io=1/0; investorshub.advfn.com=1/1; qz.com=1/0; seekingalpha.com=13/0; stocktwits.com=2/2; uk.finance.yahoo.com=2/2; www.barchart.com=2/0; www.benzinga.com=20/0; www.chartmill.com=3/0; www.cnbc.com=5/1; www.etf.com=1/1; www.fool.com=11/11; www.grocerydive.com=1/0; www.investors.com=2/0; www.kiplinger.com=2/2; www.marketbeat.com=1/0; www.medtechdive.com=2/0; www.proactiveinvestors.com=1/1; www.thestreet.com=5/0; www.trefis.com=3/3; www.wsj.com=1/0
