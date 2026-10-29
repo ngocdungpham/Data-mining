@@ -1,35 +1,68 @@
-1. Nguồn
-	api: https://finance.yahoo.com/?utm_source=chatgpt.com
-	github: github.com/Zdong104/FNSPID
-	
-2.Chuẩn bị
-	Tạo thư mục stock_price_scraper gồm:
-	   + thư mục list (mã cổ phiếu cần cào)
-	   + thư mục yahoo (dữ liệu cào được)
+# Stock Price Scraper
 
-	   + add_Mark.py (khởi tạo trạng thái của mã cần cào là 0, chuẩn bị dữ liệu đầu vào). Code lấy y nguyên từ github
+## 1. Nguồn dữ liệu
 
-	   + get_price_from_yahoo.py (chương trình cào dữ liệu). Cải tiến từ code trong github. 
+- **API:** [Yahoo Finance](https://finance.yahoo.com/)
+- **GitHub gốc:** [Zdong104/FNSPID](https://github.com/Zdong104/FNSPID)
 
-3.Cào
-	+ cài thư viện pandas, yfinance và numpy (thường cài tự động cùng pandas)
-	+ chạy add_Mark.py để khởi tạo Mark của các mã = 0.
-	+ chạy get_price_from_yahoo.py để cào dữ liệu. Nếu cào được dữ liệu sẽ đánh Mark = 1 và dữ liệu sẽ được lưu vào thư mục yahoo.
-	
-	+ Cào xong thu được 
+## 2. Chuẩn bị
 
-===== KẾT QUẢ =====
-Số file CSV có dữ liệu ngày hợp lệ: 3,749
-Tổng số bản ghi giá cổ phiếu: 6,274,575
-Số file lỗi hoặc không hợp lệ: 0
+Tạo thư mục `stock_price_scraper` gồm các thành phần sau:
 
-===== THỐNG KÊ MÃ CỔ PHIẾU =====
-Tổng số mã trong danh sách: 4,540
-Số mã cào thành công: 3,749
-Số mã cần kiểm tra/cào lại: 791
-Danh sách mã cần kiểm tra/cào lại đã lưu vào failed_tickers.csv
+- `list/`: Chứa danh sách mã cổ phiếu cần cào.
+- `yahoo/`: Chứa dữ liệu giá cổ phiếu đã cào được.
+- `add_Mark.py`: Khởi tạo trạng thái của các mã cổ phiếu bằng `Mark = 0`, chuẩn bị dữ liệu đầu vào. Code được giữ nguyên từ GitHub gốc.
+- `get_price_from_yahoo.py`: Chương trình cào dữ liệu giá cổ phiếu, được cải tiến từ code của GitHub gốc.
 
-4.Đẩy dữ liệu lên hugging face.
+## 3. Cào dữ liệu
 
-https://huggingface.co/trthanh226789
+### 3.1. Cài đặt thư viện
+
+Cài đặt các thư viện cần thiết bằng lệnh:
+
+```bash
+pip install pandas yfinance numpy
+```
+
+### 3.2. Chạy chương trình
+
+**Bước 1:** Chạy `add_Mark.py` để khởi tạo trạng thái của các mã cổ phiếu bằng `Mark = 0`.
+
+```bash
+python add_Mark.py
+```
+
+**Bước 2:** Chạy `get_price_from_yahoo.py` để cào dữ liệu giá cổ phiếu.
+
+```bash
+python get_price_from_yahoo.py
+```
+
+Nếu cào dữ liệu thành công, chương trình đánh dấu `Mark = 1` và lưu dữ liệu vào thư mục `yahoo/`.
+
+### 3.3. Kết quả thu được
+
+#### Thống kê dữ liệu
+
+| Chỉ tiêu | Kết quả |
+|---|---:|
+| Số file CSV có dữ liệu ngày hợp lệ | 3,749 |
+| Tổng số bản ghi giá cổ phiếu | 6,274,575 |
+| Số file lỗi hoặc không hợp lệ | 0 |
+
+#### Thống kê mã cổ phiếu
+
+| Chỉ tiêu | Kết quả |
+|---|---:|
+| Tổng số mã trong danh sách | 4,540 |
+| Số mã cào thành công | 3,749 |
+| Số mã cần kiểm tra hoặc cào lại | 791 |
+
+Danh sách các mã cần kiểm tra hoặc cào lại được lưu trong file `failed_tickers.csv`.
+
+## 4. Đẩy dữ liệu lên Hugging Face
+
+Dữ liệu giá cổ phiếu được tải lên Hugging Face tại:
+
+[Hugging Face Dataset](https://huggingface.co/trthanh226789)
 
