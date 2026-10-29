@@ -1,0 +1,37 @@
+Chay luc 2026-10-29 17:00:36 | mau 30 bai
+Thu muc output: D:\Data-mining\output
+Phan 2 (noi dung): 6004 headline; mau 30 bai (1 nhom nguon); da thu truoc do 0, con 30 bai can thu.
+  User-Agent: FNSPID-course-project/1.0 (educational research)
+  [1/30] ok               finance.yahoo.com | Apple (AAPL) Stock Could Be Pricing In Too Much Gr
+  [2/30] ok               finance.yahoo.com | Apple building M8 AI servers, talks with Nvidia, r
+  [3/30] ok               www.trefis.com | Dell Stock Looks Less Expensive Once You Count The
+  [4/30] ok               finance.yahoo.com | Apple stock falls on weak revenue forecast as CEO 
+  [5/30] denied_403       seekingalpha.com | Wall Street Lunch: GameStop CEO Ryan Cohen Reconsi
+  [6/30] ok               finance.yahoo.com | OpenAI developing $300+ AI speaker to challenge Am
+  [7/30] denied_403       www.thestreet.com | Warren Buffett’s biggest bet has a dividend secret
+  [8/30] ok               www.fool.com | SpaceX vs. Apple: Wall Street Sees Strong Upside f
+  [9/30] error            www.benzinga.com | Former IBM Chief Scientist's 3 Filters For SpaceX 
+  [10/30] denied_403       seekingalpha.com | Markets Starting To Choke On Massive Surge In Debt
+  [11/30] ok               www.fool.com | Berkshire Hathaway Has a New Top Holding, and It D
+  [12/30] error            www.benzinga.com | Apple May Add $100 To Higher-End iPhone Models To 
+  [13/30] ok               www.etf.com | Small Cap ETFs Are Beating the S 500 as the Mag 7 
+  [14/30] robots           beincrypto.com | Jim Cramer Names His ‘Sacred Stocks' and Why He Wo
+  [15/30] ok               finance.yahoo.com | Jefferies sees signs of softer iPhone 18 demand
+  [16/30] short            www.cnbc.com | CNBC TechCheck Evening Edition: September 10, 2026
+  [17/30] ok               www.fool.com | Tim Cook Warned of a "100-Year Flood" in Memory Ch
+  [18/30] ok               stocktwits.com | Apple Taps American Airlines Veteran For A Crucial
+  [19/30] ok               finance.yahoo.com | Broadcom (AVGO) Lands Apple Deal Worth Over $30 Bi
+  [20/30] ok               www.fool.com | Apple and Intel Just Signed a Historic Chip Partne
+  [21/30] robots           finance.yahoo.com | Nvidia Is Following Apple’s Playbook. A Record Buy
+  [22/30] ok               finance.yahoo.com | Mizuho says ignore Apple noise, flags key catalyst
+  [23/30] denied_403       www.thestreet.com | Morgan Stanley resets Nvidia stock forecast ahead 
+  [24/30] short            finance.yahoo.com | Nvidia chief meets Foxconn chairman at Taiwan tech
+  [25/30] short            www.barchart.com | The Dow's Split Personality: Why Some Winners Soar
+  [26/30] domain_skipped   www.thestreet.com | Apple’s next AI test may not be Siri
+  [27/30] ok               finance.yahoo.com | Even Apple supply chain maestro Tim Cook couldn’t 
+  [28/30] short            www.cnbc.com | Underweight Apple as they haven't monetized AI on 
+  [29/30] ok               finance.yahoo.com | Apple tests China's CXMT memory chips for iPhones 
+  [30/30] domain_cap       finance.yahoo.com | TSMC posts record revenue in second quarter on AI 
+Da luu 30 dong -> D:\Data-mining\output\content.csv (0.06 MB), cot: Date, Url, Text, Mark
+Da thu 30 bai, lay duoc noi dung 16 bai (53%). Mark: ok=16, robots=2, short=4, denied_403=4, domain_cap=1, error=2, domain_skipped=1
+Theo ten mien (so bai thu / lay duoc): beincrypto.com=1/0; finance.yahoo.com=12/9; seekingalpha.com=2/0; stocktwits.com=1/1; www.barchart.com=1/0; www.benzinga.com=2/0; www.cnbc.com=2/0; www.etf.com=1/1; www.fool.com=4/4; www.thestreet.com=3/0; www.trefis.com=1/1

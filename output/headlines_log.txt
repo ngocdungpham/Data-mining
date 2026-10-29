@@ -1,0 +1,13 @@
+Chay luc 2026-10-29 21:01:16 | 4283 ma | 2020-10-28 -> 2026-09-30
+Thu muc output: D:\Data-mining\output
+Đã đọc 22 file CSV trong D:\Data-mining\lists_headline
+Tổng số ticker hợp lệ: 4283
+Danh sách ticker từ CSV: 4283 mã
+Phan 1 (headline): 4283 ma, 2020-10-28 -> 2026-09-30, tran 1028 MB.
+  Neu goi API co du lich su: toi da ~1327730 lan goi (~405.7 gio).
+  Luu y: nhieu nguon mo ta goi mien phi chi cho lich su tin khoang 1 nam tinh tu hom nay;
+  dong 'tin cu nhat lay duoc' o tung ma se cho biet goi cua ban lui duoc xa den dau.
+[A] bat dau (lui dan tu 2026-09-30 ve 2020-10-28)
+DUNG: API tu choi (HTTP 401): key sai, het han, hoac goi mien phi khong cho phep yeu cau nay.
+Da luu 0 headline -> D:\Data-mining\output\headlines.csv (0.00 MB), cot: Date, Headline, URL
+Khong lay duoc tin nao. Xem ly do o cac dong log phia tren.
