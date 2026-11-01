@@ -51,16 +51,16 @@ import pandas as pd  # noqa: E402
 #   3. TICKERS ben duoi (danh sach du phong)
            # vi du "a" hoac "abc": lay ma tu list_a.csv, list_b.csv, list_c.csv. De trong = khong dung
 MAX_TICKERS = 0                 # 0 = lay het; so khac 0 = chi lay N ma dau tien cua danh sach
-START_DATE = "2020-10-28"       # lay tin tu ngay nay ...
+START_DATE = "2025-11-03"       # lay tin tu ngay nay ...
 END_DATE = "2026-09-30"         # ... den het ngay nay
 MAX_MB = 1028                    # tran dung luong cua cac cot trong OUTPUT_COLUMNS
 # Cot ghi vao headlines.csv. Chi 3 cot theo yeu cau; muon them thi bo sung "Symbol", "Summary", "Source"
 # (khong can cao lai vi thu muc finnhub_parts da luu day du).
 OUTPUT_COLUMNS = ["Date", "Headline", "URL"]
-WINDOW_DAYS = 7                 # chia khoang ngay thanh cac cua so nho
+WINDOW_DAYS = 30                 # chia khoang ngay thanh cac cua so nho
 SPLIT_AT = 200                  # cua so tra ve tu ngan tin tro len thi chia doi de tranh bi cat bot (phong doan)
 CALL_GAP = 1.1                  # giay giua 2 lan goi API Finnhub
-EMPTY_STOP = 6                  # gap bay nhieu cua so lien tiep khong co tin thi coi la het lich su cua goi
+EMPTY_STOP = 2                  # gap bay nhieu cua so lien tiep khong co tin thi coi la het lich su cua goi
 API = "https://finnhub.io/api/v1/company-news"
 def find_out():
     """Thu muc output DUNG CHUNG: neu thu muc cha cua script da co 'output' thi dung no (script nam trong thu muc con),
@@ -83,6 +83,11 @@ class StopRun(Exception):
     pass
 
 
+class NetworkError(StopRun):
+    """Lỗi mạng đã thử lại nhưng vẫn thất bại."""
+    pass
+
+
 def log(msg):
     print(msg)
     LOG.append(msg)
@@ -101,22 +106,46 @@ def get_key():
 
 
 def fetch_json(url):
-    """Goi API, tu thu lai khi bi gioi han toc do (429). Khong bao gio in token ra man hinh."""
-    for _ in range(3):
+    """Gọi API, thử lại khi SSL/network timeout hoặc bị giới hạn tốc độ."""
+    for attempt in range(5):
         try:
-            with urllib.request.urlopen(url, timeout=20) as r:
+            with urllib.request.urlopen(url, timeout=60) as r:
                 return json.load(r)
+
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                log("  bi gioi han toc do (429), doi 65 giay roi thu lai ...")
+                if attempt == 4:
+                    raise NetworkError(
+                        "API vẫn giới hạn tốc độ (429) sau 5 lần thử."
+                    )
+
+                log("API giới hạn tốc độ (429), đợi 65 giây...")
                 time.sleep(65)
                 continue
+
             if e.code in (401, 403):
-                raise StopRun(f"API tu choi (HTTP {e.code}): key sai, het han, hoac goi mien phi khong cho phep yeu cau nay.")
-            raise StopRun(f"Loi HTTP {e.code} tu API.")
-        except urllib.error.URLError as e:
-            raise StopRun(f"Khong ket noi duoc toi API: {e.reason}")
-    raise StopRun("Van bi gioi han toc do sau 3 lan thu.")
+                raise StopRun(
+                    f"API từ chối (HTTP {e.code}): "
+                    "kiểm tra API key hoặc quyền truy cập."
+                )
+
+            raise StopRun(f"Lỗi HTTP {e.code} từ API.")
+
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            if attempt == 4:
+                raise NetworkError(
+                    f"Không kết nối được API sau 5 lần thử: {e}"
+                )
+
+            wait = 5 * (attempt + 1)
+            log(
+                f"Lỗi kết nối: {e}. "
+                f"Thử lại sau {wait} giây "
+                f"({attempt + 1}/5)..."
+            )
+            time.sleep(wait)
+
+    raise NetworkError("Không thể kết nối API sau nhiều lần thử.")
 
 
 def get_news(symbol, start, end, key):
@@ -177,6 +206,7 @@ def tickers_from_repo_lists():
                 tickers.append(ticker)
 
     log(f"Đã đọc {len(files)} file CSV trong {folders[0]}")
+    log("Danh sách file đã tìm thấy: " + ", ".join(f.name for f in files))
     log(f"Tổng số ticker hợp lệ: {len(tickers)}")
 
     return tickers
@@ -214,64 +244,208 @@ def collect(rows):
     tickers = load_tickers()
     USED_TICKERS[:] = tickers
     PARTS.mkdir(parents=True, exist_ok=True)
-    start_limit, end_limit = date.fromisoformat(START_DATE), date.fromisoformat(END_DATE)
-    n_windows = ((end_limit - start_limit).days + 1) // WINDOW_DAYS + 1
-    log(f"Phan 1 (headline): {len(tickers)} ma, {START_DATE} -> {END_DATE}, tran {MAX_MB} MB.")
-    log(f"  Neu goi API co du lich su: toi da ~{len(tickers) * n_windows} lan goi (~{len(tickers) * n_windows * CALL_GAP / 3600:.1f} gio).")
-    log("  Luu y: nhieu nguon mo ta goi mien phi chi cho lich su tin khoang 1 nam tinh tu hom nay;")
-    log("  dong 'tin cu nhat lay duoc' o tung ma se cho biet goi cua ban lui duoc xa den dau.")
-    size, key = 0, None
+
+    start_limit = date.fromisoformat(START_DATE)
+    end_limit = date.fromisoformat(END_DATE)
+
+    log(
+        f"Phan 1: {len(tickers)} ticker, "
+        f"{START_DATE} -> {END_DATE}, tran {MAX_MB} MB."
+    )
+
+    size = 0
+    key = None
+    failed = []
+    consecutive_network_failures = 0
+
+    failed_file = OUT / "headlines_failed_tickers.txt"
+
     for t in tickers:
         part = PARTS / f"{t}.csv"
-        if part.exists():                    # chay tiep: ma nay da xong o lan truoc
-            df = pd.read_csv(part, keep_default_na=False, dtype=str).reindex(columns=COLUMNS, fill_value="")
+        partial = PARTS / f"{t}.partial.csv"
+
+        # Cache hoàn chỉnh: giữ nguyên và bỏ qua.
+        if part.exists():
+            try:
+                df = pd.read_csv(
+                    part, keep_default_na=False, dtype=str
+                ).reindex(columns=COLUMNS, fill_value="")
+            except Exception as e:
+                log(f"[{t}] Khong doc duoc cache: {e}")
+                continue
+
             recs = df.to_dict("records")
             rows.extend(recs)
             size += sum(row_size(r) for r in recs)
-            log(f"[{t}] bo qua: da co {len(recs)} tin trong {part.name} (tong {size / 1e6:.1f} MB)")
+            log(f"[{t}] bo qua cache hoan chinh: {len(recs)} tin")
+
             if size >= MAX_MB * 1e6:
                 log(f"Da dat tran {MAX_MB} MB, dung.")
-                return
+                break
             continue
+
         if key is None:
             key = get_key()
-        rows_t, seen = [], set()
-        end, empty_run, oldest = end_limit, 0, None
-        log(f"[{t}] bat dau (lui dan tu {end} ve {START_DATE})")
-        while end >= start_limit:
-            start = max(end - timedelta(days=WINDOW_DAYS - 1), start_limit)
-            items = fetch_window(t, start, end, key)
-            added = 0
-            for it in items:
-                url = (it.get("url") or "").strip()
-                head = (it.get("headline") or "").strip()
-                if not url or not head or url in seen:
-                    continue
-                ts = it.get("datetime")
-                d = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
-                if d and not (start_limit <= d.date() <= end_limit):
-                    continue
-                seen.add(url)
-                r = {"Symbol": t, "Date": d.strftime("%Y-%m-%d %H:%M:%S") if d else "",
-                     "Headline": head, "URL": url, "Summary": (it.get("summary") or "").strip(),
-                     "Source": it.get("source") or "Finnhub"}
-                rows_t.append(r)
-                rows.append(r)
-                size += row_size(r)
-                added += 1
-                if d and (oldest is None or d < oldest):
-                    oldest = d
-            log(f"  [{t}] {start}..{end}: {len(items)} tin tu API, them {added} (tong {size / 1e6:.1f} MB)")
-            if size >= MAX_MB * 1e6:
-                log(f"Da dat tran {MAX_MB} MB giua chung ma {t}, dung (ma nay chua hoan tat nen chua danh dau xong).")
+
+        # Khôi phục dữ liệu đã lấy được ở lần chạy trước.
+        rows_t = []
+        seen = set()
+
+        if partial.exists():
+            try:
+                df = pd.read_csv(
+                    partial, keep_default_na=False, dtype=str
+                ).reindex(columns=COLUMNS, fill_value="")
+
+                rows_t = df.to_dict("records")
+                seen = {
+                    r["URL"] for r in rows_t if r.get("URL")
+                }
+                rows.extend(rows_t)
+                size += sum(row_size(r) for r in rows_t)
+
+                log(
+                    f"[{t}] khoi phuc {len(rows_t)} tin tu cache tam"
+                )
+            except Exception as e:
+                log(f"[{t}] khong doc duoc cache tam: {e}")
+                rows_t = []
+                seen = set()
+
+        end = end_limit
+        empty_run = 0
+        oldest = None
+        ticker_failed = False
+
+        log(f"[{t}] bat dau")
+
+        try:
+            while end >= start_limit:
+                start = max(
+                    end - timedelta(days=WINDOW_DAYS - 1),
+                    start_limit,
+                )
+
+                items = fetch_window(t, start, end, key)
+                added = 0
+
+                for it in items:
+                    url = (it.get("url") or "").strip()
+                    head = (it.get("headline") or "").strip()
+
+                    if not url or not head or url in seen:
+                        continue
+
+                    ts = it.get("datetime")
+                    d = (
+                        datetime.fromtimestamp(ts, tz=timezone.utc)
+                        if ts else None
+                    )
+
+                    if d and not (
+                        start_limit <= d.date() <= end_limit
+                    ):
+                        continue
+
+                    seen.add(url)
+
+                    r = {
+                        "Symbol": t,
+                        "Date": d.strftime("%Y-%m-%d %H:%M:%S")
+                            if d else "",
+                        "Headline": head,
+                        "URL": url,
+                        "Summary": (it.get("summary") or "").strip(),
+                        "Source": it.get("source") or "Finnhub",
+                    }
+
+                    rows_t.append(r)
+                    rows.append(r)
+                    size += row_size(r)
+                    added += 1
+
+                    if d and (oldest is None or d < oldest):
+                        oldest = d
+
+                log(
+                    f"  [{t}] {start}..{end}: "
+                    f"{len(items)} tin, them {added}"
+                )
+
+                if size >= MAX_MB * 1e6:
+                    log(
+                        f"Dat tran {MAX_MB} MB; "
+                        f"{t} chua duoc danh dau hoan tat."
+                    )
+                    pd.DataFrame(
+                        rows_t, columns=COLUMNS
+                    ).to_csv(partial, index=False, encoding="utf-8")
+                    return
+
+                empty_run = empty_run + 1 if not items else 0
+
+                if empty_run >= EMPTY_STOP:
+                    log(
+                        f"[{t}] {EMPTY_STOP} cua so lien tiep "
+                        "khong co tin; dung lui lich su."
+                    )
+                    break
+
+                end = start - timedelta(days=1)
+
+        except NetworkError as e:
+            ticker_failed = True
+            failed.append(t)
+            consecutive_network_failures += 1
+
+            # Lưu dữ liệu từng phần, không tạo cache hoàn chỉnh.
+            pd.DataFrame(
+                rows_t, columns=COLUMNS
+            ).to_csv(partial, index=False, encoding="utf-8")
+
+            log(
+                f"[{t}] LOI MANG: {e}. "
+                f"Da luu tam {len(rows_t)} tin; "
+                "se thu lai o lan chay sau."
+            )
+
+            failed_file.write_text(
+                "\n".join(failed) + "\n",
+                encoding="utf-8",
+            )
+
+            if consecutive_network_failures >= 5:
+                log(
+                    "5 ticker lien tiep gap loi mang. "
+                    "Dung de tranh tiep tuc goi API khi ket noi khong on dinh."
+                )
                 return
-            empty_run = empty_run + 1 if not items else 0
-            if empty_run >= EMPTY_STOP:
-                log(f"  [{t}] {EMPTY_STOP} cua so lien tiep khong co tin: nhieu kha nang goi hien tai khong co lich su xa hon.")
-                break
-            end = start - timedelta(days=1)
-        pd.DataFrame(rows_t, columns=COLUMNS).to_csv(part, index=False, encoding="utf-8")
-        log(f"[{t}] xong: {len(rows_t)} tin; tin cu nhat lay duoc: {oldest.date() if oldest else 'khong co'}")
+
+        if ticker_failed:
+            continue
+
+        # Chỉ tạo cache hoàn chỉnh khi ticker xử lý xong.
+        pd.DataFrame(
+            rows_t, columns=COLUMNS
+        ).to_csv(part, index=False, encoding="utf-8")
+
+        if partial.exists():
+            partial.unlink()
+
+        consecutive_network_failures = 0
+
+        log(
+            f"[{t}] XONG: {len(rows_t)} tin; "
+            f"tin cu nhat: "
+            f"{oldest.date() if oldest else 'khong co'}"
+        )
+
+    failed_file.write_text(
+        "\n".join(failed) + ("\n" if failed else ""),
+        encoding="utf-8",
+    )
+
+    log(f"Ket thuc luot chay. Ticker loi mang: {len(failed)}")
 
 
 def save(rows):
