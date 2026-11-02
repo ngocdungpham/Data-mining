@@ -1,6 +1,2 @@
 ﻿# News Collection
-HEADLINES SCRAPER : 
-Tổng số ticker hợp lệ: 4283
-Danh sách ticker từ CSV: 4283 mã
-Da luu 592175 headline 
-Khoang ngay: 2025-11-03 00:30:00 -> 2026-09-30 23:59:54
+
